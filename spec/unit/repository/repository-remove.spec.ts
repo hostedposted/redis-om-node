@@ -1,36 +1,42 @@
-import { mocked } from 'jest-mock';
+import '../helpers/mock-client'
 
-import Client from '../../../lib/client';
-import { JsonRepository, HashRepository } from '../../../lib/repository/repository';
+import { Client } from '$lib/client'
+import { Repository } from '$lib/repository'
+import { Schema } from '$lib/schema'
 
-import { simpleHashSchema, simpleJsonSchema, SimpleHashEntity, SimpleJsonEntity } from '../helpers/test-entity-and-schema';
-
-jest.mock('../../../lib/client');
-
-
-beforeEach(() => mocked(Client).mockReset());
+const simpleSchema = new Schema("SimpleEntity", {}, { dataStructure: 'HASH' })
 
 describe("Repository", () => {
-
-  let client: Client;
-  let entityId = 'foo';
-
   describe("#remove", () => {
 
-    beforeAll(() => client = new Client());
+    let client: Client
+    let repository: Repository
 
-    it("removes a hash", async () => {
-      let repository = new HashRepository<SimpleHashEntity>(simpleHashSchema, client);
-      let expectedKey = `SimpleHashEntity:${entityId}`;
-      await repository.remove(entityId);
-      expect(Client.prototype.unlink).toHaveBeenCalledWith(expectedKey);
-    });
+    beforeAll(() => { client = new Client() })
+    beforeEach(() => { repository = new Repository(simpleSchema, client) })
 
-    it("removes JSON", async () => {
-      let repository = new JsonRepository<SimpleJsonEntity>(simpleJsonSchema, client);
-      let expectedKey = `SimpleJsonEntity:${entityId}`;
-      await repository.remove(entityId);
-      expect(Client.prototype.unlink).toHaveBeenCalledWith(expectedKey);
-    });
-  });
-});
+    it("removes no entities", async () => {
+      await repository.remove()
+      expect(client.unlink).not.toHaveBeenCalled()
+    })
+
+    it("removes a single entity", async () => {
+      await repository.remove('foo')
+      expect(client.unlink).toHaveBeenCalledWith('SimpleEntity:foo')
+    })
+
+    it("removes multiple entities", async () => {
+      await repository.remove('foo', 'bar', 'baz')
+      expect(client.unlink).toHaveBeenCalledWith(
+        'SimpleEntity:foo', 'SimpleEntity:bar', 'SimpleEntity:baz'
+      )
+    })
+
+    it("removes multiple entities discretely", async () => {
+      await repository.remove(['foo', 'bar', 'baz'])
+      expect(client.unlink).toHaveBeenCalledWith(
+        'SimpleEntity:foo', 'SimpleEntity:bar', 'SimpleEntity:baz'
+      )
+    })
+  })
+})

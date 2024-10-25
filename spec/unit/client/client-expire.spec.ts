@@ -1,44 +1,41 @@
-import { mocked } from 'jest-mock';
+import '../../helpers/custom-matchers'
 
-import RedisShim from '../../../lib/shims/redis-shim';
-import Client from '../../../lib/client';
+import { redis } from '../helpers/mock-redis'
 
-jest.mock('../../../lib/shims/redis-shim');
-
-
-beforeEach(() => mocked(RedisShim).mockReset());
+import { Client } from '$lib/client'
+import { RedisOmError } from '$lib/error'
 
 describe("Client", () => {
 
-  let client: Client;
+  let client: Client
 
-  beforeEach(async () => client = new Client());
+  beforeEach(() => { client = new Client() })
 
   describe("#expire", () => {
     describe("when called on an open client", () => {
       beforeEach(async () => {
-        await client.open();
-      });
+        await client.open()
+      })
 
-      it("passes the command to the shim", async () => {
-        await client.expire('foo', 60);
-        expect(RedisShim.prototype.expire).toHaveBeenCalledWith('foo', 60);
-      });
-    });
+      it("passes the command to redis", async () => {
+        await client.expire('foo', 60)
+        expect(redis.expire).toHaveBeenCalledWith('foo', 60)
+      })
+    })
 
     describe("when called on a closed client", () => {
       beforeEach(async () => {
-        await client.open();
-        await client.close();
-      });
-      
-      it("errors when called on a closed client", () => 
-      expect(async () => await client.expire('foo', 60))
-        .rejects.toThrow("Redis connection needs opened."));
-    });
-    
+        await client.open()
+        await client.close()
+      })
+
+      it("errors when called on a closed client", () =>
+        expect(async () => await client.expire('foo', 60))
+          .rejects.toThrowErrorOfType(RedisOmError, "Redis connection needs to be open."))
+    })
+
     it("errors when called on a new client", async () =>
       expect(async () => await client.expire('foo', 60))
-        .rejects.toThrow("Redis connection needs opened."));
-  });
-});
+        .rejects.toThrowErrorOfType(RedisOmError, "Redis connection needs to be open."))
+  })
+})

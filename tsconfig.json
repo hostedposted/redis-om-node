@@ -1,21 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES2019",
-    "module": "commonjs",
-    "rootDir": "lib",
+    "target": "ESNext",
+    "module": "CommonJS",
+    "rootDir": ".",
     "outDir": "./dist",
     "declaration": true,
     "strict": true,
-    "removeComments": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vitest/globals"],
+    "paths": {
+      "$lib/*": ["./lib/*"]
+    },
+    "noUncheckedIndexedAccess": true
   },
-  "include": [
-    "lib/**/*.ts"
-  ],
   "exclude": [
     "node_modules",
-    "spec/**/*.spec.ts"
   ],
   "typedocOptions": {
     "entryPoints": [

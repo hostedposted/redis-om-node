@@ -1,50 +1,47 @@
-import { mocked } from 'jest-mock';
+import '../../helpers/custom-matchers'
 
-import RedisShim from '../../../lib/shims/redis-shim';
-import Client from '../../../lib/client';
+import { json } from '../helpers/mock-redis'
 
-jest.mock('../../../lib/shims/redis-shim');
-
-
-beforeEach(() => mocked(RedisShim).mockReset());
+import { Client, RedisJsonData } from '$lib/client'
+import { RedisOmError } from '$lib/error'
 
 describe("Client", () => {
 
-  let client: Client;
-  let result: { [key: string]: any };
+  let client: Client
+  let result: RedisJsonData | null
 
-  beforeEach(async () => client = new Client());
+  beforeEach(() => { client = new Client() })
 
   describe("#jsonget", () => {
     describe("when called on an open client", () => {
       beforeEach(async () => {
-        await client.open();
-        mocked(RedisShim.prototype.execute).mockResolvedValue('{ "foo": "bar", "bar": 42, "baz": true, "qux": null }');
-        result = await client.jsonget('foo');
-      });
+        await client.open()
+        json.get.mockResolvedValue([ { "foo": "bar", "bar": 42, "baz": true, "qux": null } ])
+        result = await client.jsonget('foo')
+      })
 
-      it("passes the command to the shim", async () => {
-        expect(RedisShim.prototype.execute).toHaveBeenCalledWith([ 'JSON.GET', 'foo', '.' ]);
-      });
+      it("passes the command to redis", async () => {
+        expect(json.get).toHaveBeenCalledWith('foo', { path: '$' })
+      })
 
       it("returns the JSON", async () => {
-        expect(result).toEqual({ foo: 'bar', bar: 42, baz: true, qux: null });
-      });
-    });
+        expect(result).toEqual({ foo: 'bar', bar: 42, baz: true, qux: null })
+      })
+    })
 
     describe("when called on a closed client", () => {
       beforeEach(async () => {
-        await client.open();
-        await client.close();
-      });
-      
-      it("errors when called on a closed client", () => 
+        await client.open()
+        await client.close()
+      })
+
+      it("errors when called on a closed client", () =>
         expect(async () => await client.jsonget('foo'))
-          .rejects.toThrow("Redis connection needs opened."));
-    });
-    
+          .rejects.toThrowErrorOfType(RedisOmError, "Redis connection needs to be open."))
+    })
+
     it("errors when called on a new client", async () =>
       expect(async () => await client.jsonget('foo'))
-        .rejects.toThrow("Redis connection needs opened."));
-  });
-});
+        .rejects.toThrowErrorOfType(RedisOmError, "Redis connection needs to be open."))
+  })
+})

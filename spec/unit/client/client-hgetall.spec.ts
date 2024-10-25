@@ -1,50 +1,47 @@
-import { mocked } from 'jest-mock';
+import '../../helpers/custom-matchers'
 
-import RedisShim from '../../../lib/shims/redis-shim';
-import Client from '../../../lib/client';
+import { redis } from '../helpers/mock-redis'
 
-jest.mock('../../../lib/shims/redis-shim');
-
-
-beforeEach(() => mocked(RedisShim).mockReset());
+import { Client } from '$lib/client'
+import { RedisOmError } from '$lib/error'
 
 describe("Client", () => {
 
-  let client: Client;
-  let result: { [key: string]: string };
+  let client: Client
+  let result: { [key: string]: string }
 
-  beforeEach(async () => client = new Client());
+  beforeEach(() => { client = new Client() })
 
   describe("#hgetall", () => {
     describe("when called on an open client", () => {
       beforeEach(async () => {
-        await client.open();
-        mocked(RedisShim.prototype.hgetall).mockResolvedValue({ foo: 'bar', baz: 'qux' });
-        result = await client.hgetall('foo');
-      });
+        await client.open()
+        redis.hGetAll.mockResolvedValue({ foo: 'bar', baz: 'qux' })
+        result = await client.hgetall('foo')
+      })
 
-      it("passes the command to the shim", async () => {
-        expect(RedisShim.prototype.hgetall).toHaveBeenCalledWith('foo');
-      });
+      it("passes the command to redis", async () => {
+        expect(redis.hGetAll).toHaveBeenCalledWith('foo')
+      })
 
-      it("returns the value from the shim", async () => {
-        expect(result).toEqual({ foo: 'bar', baz: 'qux' });
-      });
-    });
+      it("returns the value from redis", async () => {
+        expect(result).toEqual({ foo: 'bar', baz: 'qux' })
+      })
+    })
 
     describe("when called on a closed client", () => {
       beforeEach(async () => {
-        await client.open();
-        await client.close();
-      });
-      
-      it("errors when called on a closed client", () => 
+        await client.open()
+        await client.close()
+      })
+
+      it("errors when called on a closed client", () =>
         expect(async () => await client.hgetall('foo'))
-          .rejects.toThrow("Redis connection needs opened."));
-    });
-    
+          .rejects.toThrowErrorOfType(RedisOmError, "Redis connection needs to be open."))
+    })
+
     it("errors when called on a new client", async () =>
       expect(async () => await client.hgetall('foo'))
-        .rejects.toThrow("Redis connection needs opened."));
-  });
-});
+        .rejects.toThrowErrorOfType(RedisOmError, "Redis connection needs to be open."))
+  })
+})

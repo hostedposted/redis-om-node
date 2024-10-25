@@ -1,67 +1,63 @@
-import { mocked } from 'jest-mock';
+import { redis, createClient } from '../helpers/mock-redis'
+import { Client } from '$lib/client'
 
-import RedisShim from '../../../lib/shims/redis-shim';
-import Client from '../../../lib/client';
+const BOGUS_CONNECTION = { THIS_IS_NOT: 'a real connection' }
 
-jest.mock('../../../lib/shims/redis-shim');
-
-const BOGUS_CONNECTION = { THIS_IS_NOT: 'a real connection' };
-
-
-beforeEach(() => mocked(RedisShim).mockReset());
 
 describe("Client", () => {
 
-  let client: Client, self: Client;
+  let client: Client, self: Client
 
-  beforeEach(() => client = new Client());
+  beforeEach(() => { client = new Client() })
 
   describe("#use", () => {
     describe("when not called", () => {
       it("is not open", () => {
-        expect(client.isOpen()).toBe(false);
-      });
+        expect(client.isOpen()).toBe(false)
+      })
     })
 
     describe("when called", () => {
-      // @ts-ignore: no way to call createClient without actually connecting to Redis
-      beforeEach(async () => self = await client.use(BOGUS_CONNECTION));
+      beforeEach(async () => {
+        // @ts-ignore: no way to call createClient without actually connecting to Redis
+        self = await client.use(BOGUS_CONNECTION)
+      })
 
-      it("constructs a new RedisShim with the connection", () => {
-        expect(RedisShim).toHaveBeenCalledWith(BOGUS_CONNECTION);
-      });
+      it("creates a redis client with the connection", () => {
+        expect(createClient).not.toHaveBeenCalled()
+      })
 
       it("is open", () => {
-        expect(client.isOpen()).toBe(true);
-      });
+        expect(client.isOpen()).toBe(true)
+      })
 
       it("returns itself", async () => {
-        expect(self).toBe(client);
-      });
-    });
+        expect(self).toBe(client)
+      })
+    })
 
     describe("when called on an open connection", () => {
       beforeEach(async () => {
-        await client.open();
+        await client.open()
         // @ts-ignore: no way to call createClient without actually connecting to Redis
-        self = await client.use(BOGUS_CONNECTION);
-      });
-
-      it("closes the existing shim", () => {
-        expect(RedisShim.prototype.close).toHaveBeenCalled();
+        self = await client.use(BOGUS_CONNECTION)
       })
 
-      it("constructs a new RedisShim with the connection", () => {
-        expect(RedisShim).toHaveBeenCalledWith(BOGUS_CONNECTION);
-      });
+      it("closes the existing redis connection", () => {
+        expect(redis.quit).toHaveBeenCalled()
+      })
+
+      it("doesn't create a new redis client", () => {
+        expect(createClient).not.toHaveBeenCalledWith()
+      })
 
       it("is open", () => {
-        expect(client.isOpen()).toBe(true);
-      });
+        expect(client.isOpen()).toBe(true)
+      })
 
       it("returns itself", async () => {
-        expect(self).toBe(client);
-      });
-    });
-  });
-});
+        expect(self).toBe(client)
+      })
+    })
+  })
+})

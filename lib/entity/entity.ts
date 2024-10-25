@@ -1,66 +1,33 @@
-import { Point, SchemaDefinition } from "../schema/schema-definitions";
-import Schema from "../schema/schema";
+/** The Symbol used to access the entity ID of an {@link Entity}. */
+export const EntityId = Symbol('entityId')
 
-/**
- * Valid values for properties of an {@link Entity}.
- */
-export type EntityValue = number | boolean | string | Point | Date | string[];
+/** The Symbol used to access the keyname of an {@link Entity}. */
+export const EntityKeyName = Symbol('entityKeyName')
 
-/**
- * A JavaScript object containing the underlying data of an {@link Entity}.
- */
-export type EntityData = Record<string, EntityValue>;
+export type EntityInternal = {
+  /** The unique ID of the {@link Entity}. Access using the {@link EntityId} Symbol. */
+  [EntityId]?: string
 
-/** 
- * A constructor that creates an {@link Entity} of type TEntity.
- * @template TEntity The {@link Entity} type.
- */
-export type EntityConstructor<TEntity> = new (
-  schema: Schema<any>,
-  id: string,
-  data?: EntityData) => TEntity;
+  /** The key the {@link Entity} is stored under inside of Redis. Access using the {@link EntityKeyName} Symbol. */
+  [EntityKeyName]?: string
+}
 
-/**
- * An Entity is the class from which objects that Redis OM maps to are made. You need
- * to subclass Entity in your application:
- * 
- * ```typescript
- * class Foo extends Entity {}
- * ```
- */
-export default abstract class Entity {
-  /** The generated entity ID. */
-  readonly entityId: string;
+/** Defines the objects returned from calls to {@link Repository | repositories }. */
+export type Entity = EntityData & EntityInternal
+export type EntityKeys<T extends Entity> = Exclude<keyof T, keyof EntityInternal>;
 
-  /** 
-   * The underlying data to be written to Redis.
-   * @internal
-   */
-  readonly entityData: EntityData;
+/** The free-form data associated with an {@link Entity}. */
+export type EntityData = {
+  [key: string]: EntityDataValue | EntityData | Array<EntityDataValue | EntityData>
+}
 
-  private schemaDef: SchemaDefinition;
-  private prefix: string;
+/** Valid types for values in an {@link Entity}. */
+export type EntityDataValue = string | number | boolean | Date | Point | null | undefined | Array<EntityDataValue | EntityData>
 
-  /** 
-   * Creates an new Entity.
-   * @internal
-   */
-  constructor(schema: Schema<any>, id: string, data: EntityData = {}) {
-    this.schemaDef = schema.definition;
-    this.prefix = schema.prefix;
-    this.entityId = id;
-    this.entityData = data;
-  }
-
-  get keyName(): string {
-    return `${this.prefix}:${this.entityId}`;
-  }
-
-  toJSON() {
-    let json: Record<string, any> = { entityId: this.entityId }
-    for (let key in this.schemaDef) {
-      json[key] = (this as Record<string, any>)[key];
-    }
-    return json;
-  }
+/** Defines a point on the globe using longitude and latitude. */
+export type Point = {
+  /** The longitude of the point. */
+  longitude: number
+  /** The latitude of the point. */
+  latitude: number
 }

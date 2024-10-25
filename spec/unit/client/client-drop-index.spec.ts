@@ -1,44 +1,42 @@
-import { mocked } from 'jest-mock';
+import '../../helpers/custom-matchers'
 
-import RedisShim from '../../../lib/shims/redis-shim';
-import Client from '../../../lib/client';
+import { ft } from '../helpers/mock-redis'
 
-jest.mock('../../../lib/shims/redis-shim');
+import { Client } from '$lib/client'
+import { RedisOmError } from '$lib/error'
 
-
-beforeEach(() => mocked(RedisShim).mockReset());
 
 describe("Client", () => {
 
-  let client: Client;
+  let client: Client
 
-  beforeEach(async () => client = new Client());
+  beforeEach(() => { client = new Client() })
 
   describe("#dropIndex", () => {
     describe("when called on an open client", () => {
       beforeEach(async () => {
-        await client.open();
-      });
+        await client.open()
+      })
 
-      it("passes the command to the shim", async () => {
-        await client.dropIndex('index');
-        expect(RedisShim.prototype.execute).toHaveBeenCalledWith([ 'FT.DROPINDEX', 'index' ]);
-      });
-    });
+      it("passes the command to redis", async () => {
+        await client.dropIndex('index')
+        expect(ft.dropIndex).toHaveBeenCalledWith('index')
+      })
+    })
 
     describe("when called on a closed client", () => {
       beforeEach(async () => {
-        await client.open();
-        await client.close();
-      });
-      
-      it("errors when called on a closed client", () => 
+        await client.open()
+        await client.close()
+      })
+
+      it("errors when called on a closed client", () =>
         expect(async () => await client.dropIndex('index'))
-          .rejects.toThrow("Redis connection needs opened."));
-    });
-    
+          .rejects.toThrowErrorOfType(RedisOmError, "Redis connection needs to be open."))
+    })
+
     it("errors when called on a new client", async () =>
       expect(async () => await client.dropIndex('index'))
-        .rejects.toThrow("Redis connection needs opened."));
-  });
-});
+        .rejects.toThrowErrorOfType(RedisOmError, "Redis connection needs to be open."))
+  })
+})

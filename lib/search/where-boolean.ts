@@ -1,33 +1,33 @@
-import Entity from "../entity/entity";
-import { Search } from "./search";
-import WhereField from "./where-field";
+import { Entity } from "../entity"
+import { Search } from "./search"
+import { WhereField } from "./where-field"
 
-export abstract class WhereBoolean<TEntity extends Entity> extends WhereField<TEntity> {
-  protected value!: boolean;
+export abstract class WhereBoolean<T extends Entity> extends WhereField<T> {
+  protected value!: boolean
 
-  eq(value: boolean): Search<TEntity> {
-    this.value = value;
-    return this.search;
+  eq(value: boolean): Search<T> {
+    this.value = value
+    return this.search
   }
 
-  equal(value: boolean): Search<TEntity> { return this.eq(value); }
-  equals(value: boolean): Search<TEntity> { return this.eq(value); }
-  equalTo(value: boolean): Search<TEntity> { return this.eq(value); }
+  equal(value: boolean): Search<T> { return this.eq(value) }
+  equals(value: boolean): Search<T> { return this.eq(value) }
+  equalTo(value: boolean): Search<T> { return this.eq(value) }
 
-  true(): Search<TEntity> { return this.eq(true); }
-  false(): Search<TEntity> { return this.eq(false); }
+  true(): Search<T> { return this.eq(true) }
+  false(): Search<T> { return this.eq(false) }
 
-  abstract toString(): string;
+  abstract toString(): string
 }
 
-export class WhereHashBoolean<TEntity extends Entity> extends WhereBoolean<TEntity> {
+export class WhereHashBoolean<T extends Entity> extends WhereBoolean<T> {
   toString(): string {
-    return this.buildQuery(`{${this.value ? '1' : '0'}}`);
+    return this.buildQuery(`{${this.value ? '1' : '0'}}`)
   }
 }
 
-export class WhereJsonBoolean<TEntity extends Entity> extends WhereBoolean<TEntity> {
+export class WhereJsonBoolean<T extends Entity> extends WhereBoolean<T> {
   toString(): string {
-    return this.buildQuery(`{${this.value}}`);
+    return this.buildQuery(`{${this.value}}`)
   }
 }

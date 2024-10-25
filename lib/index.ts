@@ -1,26 +1,11 @@
-import Client, { SearchDataStructure, HashData, JsonData } from "./client";
-import Entity, { EntityConstructor, EntityData, EntityValue } from "./entity/entity";
-import RedisError from "./errors";
-import Repository from "./repository/repository";
-import { EntityCreationData } from "./repository/repository";
-import Schema from "./schema/schema";
-import { 
-  SchemaDefinition, IdStrategy, StopWordOptions, Point, FieldDefinition, 
-  Field, Sortable, Separable, BooleanField, DateField, NumberField, PointField, StringField, StringArrayField, TextField } from "./schema/schema-definitions";
-import { SchemaOptions } from "./schema/schema-options";
-import { AbstractSearch, Search, RawSearch, SubSearchFunction } from "./search/search";
-import Where from "./search/where";
-import WhereField from "./search/where-field";
-import { Circle, CircleFunction } from "./search/where-point";
-
-
-export {
-  Client, SearchDataStructure, HashData, JsonData, 
-  Entity, EntityConstructor, EntityData, EntityValue, 
-  RedisError, Repository, EntityCreationData,
-  Schema, SchemaDefinition, SchemaOptions, Point,
-  FieldDefinition, IdStrategy, StopWordOptions,
-  Field, Sortable, Separable, BooleanField, DateField, NumberField, PointField, StringField, StringArrayField, TextField,
-  AbstractSearch, Search, RawSearch, SubSearchFunction,
-  Where, WhereField, Circle, CircleFunction
-};
+export { Client, RedisClientConnection, RedisConnection, RedisClusterConnection } from './client'
+export { Entity, EntityData, EntityDataValue, EntityId, EntityInternal, EntityKeyName, EntityKeys, Point } from './entity'
+export * from './error'
+export { Field } from './schema/field'
+export { Schema, InferSchema } from './schema/schema'
+export { DataStructure, IdStrategy, SchemaOptions, StopWordOptions } from './schema/options'
+export { AllFieldDefinition, BooleanFieldDefinition, CommonFieldDefinition, DateFieldDefinition, FieldDefinition,
+  FieldType, NumberArrayFieldDefinition, NumberFieldDefinition, PointFieldDefinition, SchemaDefinition, StringArrayFieldDefinition,
+  StringFieldDefinition, TextFieldDefinition } from './schema/definitions'
+export { AbstractSearch, Circle, CircleFunction, RawSearch, Search, SubSearchFunction, Where, WhereField } from './search'
+export { Repository } from './repository'

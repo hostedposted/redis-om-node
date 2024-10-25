@@ -1,128 +1,116 @@
-import { mocked } from 'jest-mock';
+import { client } from '../helpers/mock-client'
 
-import Client from "../../../lib/client";
-import { Search, RawSearch } from "../../../lib/search/search";
+import { Client } from "$lib/client"
+import { Entity, EntityId } from '$lib/entity'
+import { Search, RawSearch } from "$lib/search"
 
-import { simpleHashSchema, SimpleHashEntity, SimpleJsonEntity, simpleJsonSchema } from "../helpers/test-entity-and-schema";
+import { simpleHashSchema, simpleJsonSchema } from "../helpers/test-entity-and-schema"
 import { mockClientSearchToReturnNothing, mockClientSearchToReturnSingleHash,
-  mockClientSearchToReturnSingleJsonString, SIMPLE_ENTITY_1 } from '../helpers/search-helpers';
+  mockClientSearchToReturnSingleJsonString, SIMPLE_ENTITY_1 } from '../helpers/search-helpers'
 
-jest.mock('../../../lib/client');
-jest.mock('../../../lib/shims/logger')
+console.warn = vi.fn()
 
 
-type HashSearch = Search<SimpleHashEntity> | RawSearch<SimpleHashEntity>;
-type JsonSearch = Search<SimpleJsonEntity> | RawSearch<SimpleJsonEntity>;
-
-beforeEach(() => {
-  mocked(Client).mockReset();
-  mocked(Client.prototype.search).mockReset();
-});
+type HashSearch = Search | RawSearch
+type JsonSearch = Search | RawSearch
 
 describe.each([
-  [ "FluentSearch", 
-    new Search<SimpleHashEntity>(simpleHashSchema, new Client()),
-    new Search<SimpleJsonEntity>(simpleJsonSchema, new Client()) ],
+  [ "FluentSearch",
+    new Search(simpleHashSchema, new Client()),
+    new Search(simpleJsonSchema, new Client()) ],
   [ "RawSearch",
-    new RawSearch<SimpleHashEntity>(simpleHashSchema, new Client()),
-    new RawSearch<SimpleJsonEntity>(simpleJsonSchema, new Client()) ]
+    new RawSearch(simpleHashSchema, new Client()),
+    new RawSearch(simpleJsonSchema, new Client()) ]
 ])("%s", (_, hashSearch: HashSearch, jsonSearch: JsonSearch) => {
 
   describe("#returnMin", () => {
+
+    let entity: Entity | null
+
     describe("when running against hashes", () => {
-      let entity: SimpleHashEntity;
-      let indexName = 'SimpleHashEntity:index', query = '*';
+      let indexName = 'SimpleHashEntity:index', query = '*'
 
       describe("when querying no results", () => {
         beforeEach( async () => {
-          mockClientSearchToReturnNothing();
-          entity = await hashSearch.return.min('aNumber');
-        });
+          mockClientSearchToReturnNothing()
+          entity = await hashSearch.return.min('aNumber')
+        })
 
         it("asks the client for the first result of a given repository", () => {
-          expect(Client.prototype.search).toHaveBeenCalledTimes(1);
-          expect(Client.prototype.search).toHaveBeenCalledWith({
-            indexName,
-            query,
-            limit: { offset: 0, count: 1 },
-            sort: { field: 'aNumber', order: 'ASC' }
-          });
-        });
+          expect(client.search).toHaveBeenCalledTimes(1)
+          expect(client.search).toHaveBeenCalledWith(indexName, query, {
+            LIMIT: { from: 0, size: 1 },
+            SORTBY: { BY: 'aNumber', DIRECTION: 'ASC' } })
+        })
 
-        it("return no result", () => expect(entity).toBe(null));
-      });
+        it("return no result", () => expect(entity).toBe(null))
+      })
 
       describe("when getting a result", () => {
         beforeEach(async () => {
-          mockClientSearchToReturnSingleHash();
-          entity = await hashSearch.return.min('aNumber');
-        });
+          mockClientSearchToReturnSingleHash()
+          entity = await hashSearch.return.min('aNumber')
+        })
 
         it("asks the client for the first result of a given repository", () => {
-          expect(Client.prototype.search).toHaveBeenCalledTimes(1)
-          expect(Client.prototype.search).toHaveBeenCalledWith({
-            indexName,
-            query,
-            limit: { offset: 0, count: 1 },
-            sort: { field: 'aNumber', order: 'ASC' }
-          });
-        });
+          expect(client.search).toHaveBeenCalledTimes(1)
+          expect(client.search).toHaveBeenCalledWith(indexName, query, {
+            LIMIT: { from: 0, size: 1 },
+            SORTBY: { BY: 'aNumber', DIRECTION: 'ASC' } })
+        })
 
         it("returns the first result of a given repository", () => {
-          expect(entity.entityData.aBoolean).toEqual(SIMPLE_ENTITY_1.aBoolean);
-          expect(entity.entityData.aNumber).toEqual(SIMPLE_ENTITY_1.aNumber);
-          expect(entity.entityData.aString).toEqual(SIMPLE_ENTITY_1.aString);
-          expect(entity.entityId).toEqual(SIMPLE_ENTITY_1.entityId);
-        });
-      });
-    });
+          expect(entity?.aBoolean).toEqual(SIMPLE_ENTITY_1.aBoolean)
+          expect(entity?.aNumber).toEqual(SIMPLE_ENTITY_1.aNumber)
+          expect(entity?.aString).toEqual(SIMPLE_ENTITY_1.aString)
+          expect(entity ? entity[EntityId] : null).toEqual(SIMPLE_ENTITY_1[EntityId])
+        })
+      })
+    })
 
     describe("when running against JSON Objects", () => {
-      let entity: SimpleJsonEntity;
-      let indexName = 'SimpleJsonEntity:index', query = '*';
+      let indexName = 'SimpleJsonEntity:index', query = '*'
 
       describe("when querying no results", () => {
         beforeEach( async () => {
-          mockClientSearchToReturnNothing();
-          entity = await jsonSearch.return.min('aNumber');
-        });
+          mockClientSearchToReturnNothing()
+          entity = await jsonSearch.return.min('aNumber')
+        })
 
         it("asks the client for the first result of a given repository", () => {
-          expect(Client.prototype.search).toHaveBeenCalledTimes(1);
-          expect(Client.prototype.search).toHaveBeenCalledWith({
-            indexName,
-            query,
-            limit: { offset: 0, count: 1 },
-            sort: { field: 'aNumber', order: 'ASC' }
-          });
-        });
+          expect(client.search).toHaveBeenCalledTimes(1)
+          expect(client.search).toHaveBeenCalledWith(indexName, query, {
+            LIMIT: { from: 0, size: 1 },
+            SORTBY: { BY: 'aNumber', DIRECTION: 'ASC' },
+            RETURN: '$'
+          })
+        })
 
-        it("return no result", () => expect(entity).toBe(null));
-      });
+        it("return no result", () => expect(entity).toBe(null))
+      })
 
       describe("when getting a result", () => {
         beforeEach(async () => {
-          mockClientSearchToReturnSingleJsonString();
-          entity = await jsonSearch.return.min('aNumber');
-        });
+          mockClientSearchToReturnSingleJsonString()
+          entity = await jsonSearch.return.min('aNumber')
+        })
 
         it("asks the client for the first result of a given repository", () => {
-          expect(Client.prototype.search).toHaveBeenCalledTimes(1)
-          expect(Client.prototype.search).toHaveBeenCalledWith({
-            indexName,
-            query,
-            limit: { offset: 0, count: 1 },
-            sort: { field: 'aNumber', order: 'ASC' }
-          });
-        });
+          expect(client.search).toHaveBeenCalledTimes(1)
+          expect(client.search).toHaveBeenCalledWith(indexName, query, {
+            LIMIT: { from: 0, size: 1 },
+            SORTBY: { BY: 'aNumber', DIRECTION: 'ASC' },
+            RETURN: '$'
+          })
+        })
 
         it("returns the first result of a given repository", () => {
-          expect(entity.entityData.aBoolean).toEqual(SIMPLE_ENTITY_1.aBoolean);
-          expect(entity.entityData.aNumber).toEqual(SIMPLE_ENTITY_1.aNumber);
-          expect(entity.entityData.aString).toEqual(SIMPLE_ENTITY_1.aString);
-          expect(entity.entityId).toEqual(SIMPLE_ENTITY_1.entityId);
-        });
-      });
-    });
-  });
-});
+          expect(entity?.aBoolean).toEqual(SIMPLE_ENTITY_1.aBoolean)
+          expect(entity?.aNumber).toEqual(SIMPLE_ENTITY_1.aNumber)
+          expect(entity?.aString).toEqual(SIMPLE_ENTITY_1.aString)
+          expect(entity ? entity[EntityId] : null).toEqual(SIMPLE_ENTITY_1[EntityId])
+        })
+      })
+    })
+  })
+})

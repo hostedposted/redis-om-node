@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
+    branches: ["main"]
   pull_request:
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -10,12 +12,12 @@ jobs:
     name: Test All
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [12, 14, 16]
-        redismod: [ "edge" ]
+        node-version: [18, 20]
     services:
       redis:
-        image: redislabs/redismod:${{ matrix.redismod }}
+        image: redis/redis-stack-server:latest
         ports:
           - 6379:6379
         options: >-
@@ -25,18 +27,22 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2.3.0
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Update npm
         run: npm install --global npm
+        if: ${{ matrix.node-version <= 14 }}
 
       - name: Install packages
         run: npm ci
 
       - name: Run all tests
-        run: npm run test-all
+        run: npm run test:coverage
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v3

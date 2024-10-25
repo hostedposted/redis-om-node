@@ -1,57 +1,56 @@
-import { mocked } from 'jest-mock';
+import '../helpers/mock-client'
+import '../../helpers/custom-matchers'
 
-import Client from '../../../lib/client';
-import Repository from '../../../lib/repository/repository';
-import { HashRepository } from '../../../lib/repository/repository';
-
-import { simpleSchema, SimpleEntity } from '../helpers/test-entity-and-schema';
-
-jest.mock('../../../lib/client');
+import { Client } from '$lib/client'
+import { Repository } from '$lib/repository'
+import { Schema } from '$lib/schema'
 
 
-beforeEach(() => mocked(Client).mockReset());
+const simpleSchema = new Schema("SimpleEntity", {}, { dataStructure: 'HASH' })
 
 describe("Repository", () => {
 
-  let client: Client;
-  let repository: Repository<SimpleEntity>;
+  let client: Client
+  let repository: Repository
 
   describe("#dropIndex", () => {
 
-    beforeAll(() => client = new Client());
-
-    beforeEach(() => repository = new HashRepository(simpleSchema, client));
+    beforeAll(() => { client = new Client() })
+    beforeEach(() => { repository = new Repository(simpleSchema, client) })
 
     describe("when the index exists", () => {
-      beforeEach(async () => await repository.dropIndex());
+      beforeEach(async () => await repository.dropIndex())
 
-      it("asks the client to drop the index", async () => {
-        expect(Client.prototype.dropIndex).toHaveBeenCalledWith(simpleSchema.indexName);
-      });
+      it("asks the client to drop the index", async () =>
+        expect(client.dropIndex).toHaveBeenCalledWith(simpleSchema.indexName))
 
-      it("asks the client to remove the index hash", async () => {
-        expect(Client.prototype.unlink).toHaveBeenCalledWith(simpleSchema.indexHashName);
-      });
-    });
+      it("asks the client to remove the index hash", async () =>
+        expect(client.unlink).toHaveBeenCalledWith(simpleSchema.indexHashName))
+    })
 
     describe("when the index doesn't exist", () => {
       beforeEach(async () => {
-        mocked(Client.prototype.dropIndex).mockRejectedValue(new Error("Unknown Index name"));
-      });
+        vi.mocked(client.dropIndex).mockRejectedValue(Error("Unknown index name"))
+      })
 
-      it("eats the exception", async () => {
-        await repository.dropIndex(); // it doesn't throw an exception
-      });
-    });
+      it("eats the exception", async () => await repository.dropIndex()) // it doesn't throw an exception
+    })
+
+    describe("when the index doesn't exist for newer versions of Redis", () => {
+      beforeEach(async () => {
+        vi.mocked(client.dropIndex).mockRejectedValue(Error("Unknown index name"))
+      })
+
+      it("eats the exception", async () => await repository.dropIndex()) // it doesn't throw an exception
+    })
 
     describe("when dropping the index throws some other Redis exception", () => {
       beforeEach(async () => {
-        mocked(Client.prototype.dropIndex).mockRejectedValue(new Error("Some other error"));
-      });
+        vi.mocked(client.dropIndex).mockRejectedValue(Error("Some other error"))
+      })
 
-      it("propogates the exception", async () => {
-        expect(async () => await repository.dropIndex()).rejects.toThrow("Some other error");
-      });
-    });
-  });
-});
+      it("propogates the exception", async () =>
+        expect(async () => await repository.dropIndex()).rejects.toThrowErrorOfType(Error, "Some other error"))
+    })
+  })
+})
